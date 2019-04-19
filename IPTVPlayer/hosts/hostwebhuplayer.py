@@ -1,13 +1,12 @@
 ﻿# -*- coding: utf-8 -*-
 ###################################################
-# 2019-04-19 by Alec - WebHUPlayer
+# 2019-04-19 by Alec - Web HU Player
 ###################################################
 HOST_VERSION = "1.0"
 ###################################################
-###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printDBG, GetLogoDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
@@ -19,9 +18,12 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigYesNo, ConfigDirectory, getConfigListEntry
+from Components.config import config, ConfigText, ConfigDirectory, getConfigListEntry
 from os.path import normpath
+import urlparse
+import os
 from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
+from Screens.MessageBox import MessageBox
 ###################################################
 
 ###################################################
@@ -43,7 +45,7 @@ class webhuplayer(CBaseHostClass):
     def __init__(self):
         printDBG("webhuplayer.__init__")
         CBaseHostClass.__init__(self)
-        path = config.plugins.iptvplayer.webhuplayer_dir + '/'
+        path = config.plugins.iptvplayer.webhuplayer_dir.value + '/'
         self.currFileHost = None
 
     def _getHostingName(self, url):
@@ -59,7 +61,7 @@ class webhuplayer(CBaseHostClass):
         
     def listMainMenu(self, cItem):
         try:
-            msg_host = 'Webes tartalmak'
+            msg_webes = 'Webes tartalmak'
             MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'Webes tartalmak', 'tab_id': 'webes', 'desc': msg_webes}
                            ]
             self.listsTab(MAIN_CAT_TAB, cItem)
@@ -83,35 +85,12 @@ class webhuplayer(CBaseHostClass):
             printExc()            
             
     def Webes_tartalmak(self, cItem):
-        msg = 'Jelenleg nem üzemel ez a fúnkció! Nemsokára működni fog.'
-        self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
+        try:
+            msg = 'Jelenleg nem üzemel ez a fúnkció! Nemsokára működni fog.'
+            self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
+        except Exception:
+            printExc()
         return
-                
-    def getLinksForVideo(self, cItem):
-        printDBG("Urllist.getLinksForVideo url[%s]" % cItem['url'])
-        videoUrls = []
-        uri = urlparser.decorateParamsFromUrl(cItem['url'])
-        protocol = uri.meta.get('iptv_proto', '')
-        
-        printDBG("PROTOCOL [%s] " % protocol)
-        
-        urlSupport = self.up.checkHostSupport( uri )
-        if 1 == urlSupport:
-            retTab = self.up.getVideoLinkExt( uri )
-            videoUrls.extend(retTab)
-        elif 0 == urlSupport and self._uriIsValid(uri):
-            if protocol == 'm3u8':
-                retTab = getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
-                videoUrls.extend(retTab)
-            elif protocol == 'f4m':
-                retTab = getF4MLinksWithMeta(uri)
-                videoUrls.extend(retTab)
-            elif protocol == 'mpd':
-                retTab = getMPDLinksWithMeta(uri, False)
-                videoUrls.extend(retTab)
-            else:
-                videoUrls.append({'name':'direct link', 'url':uri})
-        return videoUrls
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -134,3 +113,4 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, webhuplayer(), True, [])
+
