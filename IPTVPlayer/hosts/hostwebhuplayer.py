@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-05-20 by Alec - Web HU Player
+# 2019-05-21 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "1.6"
+HOST_VERSION = "1.7"
 ###################################################
 # LOCAL import
 ###################################################
@@ -79,7 +79,8 @@ class webhuplayer(CBaseHostClass):
         self.fwuln = normpath(self.path_wh + self.WHPL)
         self.fwuytln = normpath(self.path_yt + self.WHYTPL)
         self.fwan = normpath(self.path_wh + self.WAFL)
-        self.whuunz = config.plugins.iptvplayer.webhuplayer_dir.value + '/tpuntzt.tmp'
+        self.whuunz = config.plugins.iptvplayer.webhuplayer_dir.value + zlib.decompress(base64.b64decode('eJzTLykozSupKtEryS0AAB7TBNg='))
+        self.whutv = config.plugins.iptvplayer.webhuplayer_dir.value + zlib.decompress(base64.b64decode('eJzTLykozygtKdMryS0AAB6iBNE='))
         self.WUSG = self.path_wh + zlib.decompress(base64.b64decode('eJwrKS8tTtcryS0AABMbA7o='))
         self.YUSG = self.path_yt + zlib.decompress(base64.b64decode('eJwrqSwtTtcryS0AABMrA7w='))
         self.IH = resolveFilename(SCOPE_PLUGINS, zlib.decompress(base64.b64decode('eJxzrShJzSvOzM8r1vcMCAkLyEmsTC0CAFlVCBA=')))
@@ -88,6 +89,7 @@ class webhuplayer(CBaseHostClass):
         self.aid_ki = ''
         self.wupt = []
         self.yupt = []
+        self.whuav = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': False, 'load_cookie': False, 'save_cookie': False, 'cookiefile': self.COOKIE_FILE}
         
     def _uriIsValid(self, url):
@@ -152,6 +154,90 @@ class webhuplayer(CBaseHostClass):
                 return
         except Exception:
             printExc()
+            
+    def dtcffn(self):
+        encoding = 'utf-8'
+        self.whuav = {}
+        try:
+            if fileExists(self.whutv):
+                with codecs.open(self.whutv, 'r', encoding, 'replace') as fpr:
+                    for line in fpr:
+                        if type(line) == type(u''): line = line.encode('utf-8', 'replace')
+                        line = line.replace('\n', '').strip()
+                        if len(line) > 0:
+                            tt = line.split('|')
+                            if len(tt) == 2:
+                                self.whuav[tt[0].strip()] = tt[1].strip()
+        except Exception:
+            self.whuav = {}
+            return
+            
+    def frtrlv(self):
+        kkl = False
+        lwh = config.plugins.iptvplayer.webhuplayer_dir.value
+        lwm = config.plugins.iptvplayer.webmedia_dir.value
+        lym = config.plugins.iptvplayer.ytmedia_dir.value
+        encoding = 'utf-8'
+        ltfn = self.whutv + '.writing'
+        try:
+            if os.path.isdir(lwh):
+                fpw = codecs.open(ltfn, 'w', encoding, 'replace')
+            else:
+                if mkdirs(lwh): 
+                    fpw = codecs.open(ltfn, 'w', encoding, 'replace')
+                else:
+                    msg = 'A Web HU Player könyvtára nem hozható létre!\nA kék gomb, majd az Oldal beállításai segítségével megadhatod a kért adatokat.\nHa megfelelőek az előre beállított értékek, akkor ZÖLD gomb (Mentés) megnyomása!'
+                    self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
+                    return
+            if os.path.isdir(lwm):
+                for root, dirs, files in os.walk(lwm):
+                    dirs.sort()
+                    for filename in sorted(files):
+                        fname_with_path = os.path.join(root, filename)
+                        fext = os.path.splitext(fname_with_path)[1]
+                        if fext in ['.stream','.kstream']:
+                            if '.kstream' in fname_with_path:
+                                kkl = True
+                            else:
+                                kkl = False
+                            data, elso = self.tkn_dt(fname_with_path)
+                            if len(data) == 0: continue
+                            for item in data:
+                                tov, prdt = self.tkn_it(item, kkl)
+                                if tov or len(prdt) == 0:
+                                    continue
+                                va = prdt['azn']
+                                vv = prdt['verzio']
+                                fpw.write("%s | %s\n" % (va,vv))
+            if os.path.isdir(lym):
+                for root, dirs, files in os.walk(lym):
+                    dirs.sort()
+                    for filename in sorted(files):
+                        fname_with_path = os.path.join(root, filename)
+                        fext = os.path.splitext(fname_with_path)[1]
+                        if fext in ['.stream','.kstream']:
+                            if '.kstream' in fname_with_path:
+                                kkl = True
+                            else:
+                                kkl = False
+                            data, elso = self.tkn_dt(fname_with_path)
+                            if len(data) == 0: continue
+                            for item in data:
+                                tov, prdt = self.tkn_it(item, kkl)
+                                if tov or len(prdt) == 0:
+                                    continue
+                                va = prdt['azn']
+                                vv = prdt['verzio']
+                                fpw.write("%s | %s\n" % (va,vv))
+            fpw.flush()
+            os.fsync(fpw.fileno())
+            fpw.close()
+            os.rename(ltfn, self.whutv)
+            if fileExists(ltfn):
+                rm(ltfn)
+        except Exception:
+            if fileExists(ltfn):
+                rm(ltfn)        
 
     def wstrtlmk(self, cItem):
         vlrs = ''
@@ -296,9 +382,11 @@ class webhuplayer(CBaseHostClass):
                 msg_yt_frissit = self.aid_ki + 'YouTube tartalom frissítése...'
                 self.wupt = []
                 self.yupt = []
+                self.dtcffn()
                 FR_CAT_TAB = []
                 FR_CAT_TAB.append(self.mtem('1','Webes tartalom frissítése','web_tr_frissit',msg_webes_frissit))
                 FR_CAT_TAB.append(self.mtem('2','YouTube tartalom frissítése','yt_tr_frissit',msg_yt_frissit))
+                self.whuav = {}
                 self.listsTab(FR_CAT_TAB, cItem)
             else:
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
@@ -480,6 +568,7 @@ class webhuplayer(CBaseHostClass):
                     self.susn('2', '10', 'hu_webes_frissit')
                     self.wstmts(cItem)
                     self.wmpfkr()
+                    self.frtrlv()
             else:
                 msg = 'A kék gomb, majd az Oldal beállításai segítségével megadhatod a kért adatokat.\nHa megfelelőek az előre beállított értékek, akkor ZÖLD gomb (Mentés) megnyomása!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
@@ -496,6 +585,7 @@ class webhuplayer(CBaseHostClass):
                     self.susn('2', '10', 'hu_yt_frissites')
                     self.ytmtps(cItem)
                     self.ytmpfkr()
+                    self.frtrlv()
             else:
                 msg = 'A kék gomb, majd az Oldal beállításai segítségével megadhatod a kért adatokat.\nHa megfelelőek az előre beállított értékek, akkor ZÖLD gomb (Mentés) megnyomása!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
@@ -1114,7 +1204,7 @@ class webhuplayer(CBaseHostClass):
         fname_zip = destination_dir + '/' + fname
         unzip_command = ['unzip', '-q', '-o', destination, '-d', self.TEMP]
         unzip_command_zip = ['unzip', '-q', '-o', fname_zip, '-d', self.TEMP]
-        if not os.path.isdir(lyt):
+        if not os.path.isdir(lyt) or len(self.whuav) == 0:
             vsz = '  -  Telepítés szükséges'
             dsz = 'Telepíteni kell a Web média tartalmat!  OK gomb megnyomása után a tartalom települ. A telepítés időigényes lehet...'
             return vsz, dsz
@@ -1185,7 +1275,7 @@ class webhuplayer(CBaseHostClass):
         fname_zip = destination_dir + '/' + fname
         unzip_command = ['unzip', '-q', '-o', destination, '-d', self.TEMP]
         unzip_command_zip = ['unzip', '-q', '-o', fname_zip, '-d', self.TEMP]
-        if not os.path.isdir(lyt):
+        if not os.path.isdir(lyt) or len(self.whuav) == 0:
             vsz = '  -  Telepítés szükséges'
             dsz = 'Telepíteni kell a YouTube média tartalmat!  OK gomb megnyomása után a tartalom települ. A telepítés időigényes lehet...'
             return vsz, dsz
@@ -1363,9 +1453,9 @@ class webhuplayer(CBaseHostClass):
                     tov, prdt = self.tkn_it(item, kkl)
                     if tov or len(prdt) == 0:
                         continue
-                    params = self.lstre(lfn, kkl, prdt['azn'])
-                    if len(params) > 0:
-                        if params['verzio'] != prdt['verzio']:
+                    bvv, bvnv = self.lwhuv(prdt['azn'], prdt['verzio'])
+                    if bvv:
+                        if bvnv:
                             ev += 1
                     else:
                         uv += 1
@@ -1380,6 +1470,22 @@ class webhuplayer(CBaseHostClass):
         except Exception:
             return 0, 0
         return ev, uv
+        
+    def lwhuv(self, azn='', pv=''):
+        bvv = False
+        bvnv = False
+        try:
+            if azn != '' and pv != '':
+                if len(self.whuav) > 0:
+                    for key, val in self.whuav.items():
+                        if key == azn:
+                            if val != pv:
+                                bvnv = True
+                            bvv = True
+                            break
+        except Exception:
+            return False, False
+        return bvv, bvnv
         
     def esklsz(self, bk='3', gste='', beert=True):
         kszvdrtk = ''
@@ -1409,24 +1515,6 @@ class webhuplayer(CBaseHostClass):
         except Exception:
             return ''
         return kszvdrtk
-        
-    def lstre(self, lfn='', kkl=False, azn=''):
-        params = {}
-        try:
-            if lfn != '' and azn != '':
-                data, elso = self.tkn_dt(lfn)
-                if len(data) == 0: return params
-                for item in data:
-                    tov, prdt = self.tkn_it(item, kkl)
-                    if tov or len(prdt) == 0:
-                        continue
-                    if prdt['azn'] == azn:
-                        return prdt
-                    else:
-                        continue
-        except Exception:
-            return params
-        return params
     
     def gvsn(self, fn=''):
         verzio = 0
