@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-05-21 by Alec - Web HU Player
+# 2019-05-27 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "1.7"
+HOST_VERSION = "1.8"
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir, rm, rmtree, mkdirs, DownloadFile, GetFileSize, GetConfigDir, Which 
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir, GetIPTVPlayerVerstion, rm, rmtree, mkdirs, DownloadFile, GetFileSize, GetConfigDir, Which 
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, getMPDLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs import ph
@@ -79,6 +79,9 @@ class webhuplayer(CBaseHostClass):
         self.fwuln = normpath(self.path_wh + self.WHPL)
         self.fwuytln = normpath(self.path_yt + self.WHYTPL)
         self.fwan = normpath(self.path_wh + self.WAFL)
+        self.vivn = GetIPTVPlayerVerstion()
+        self.porv = self.gits()
+        self.pbtp = '-'
         self.whuunz = config.plugins.iptvplayer.webhuplayer_dir.value + zlib.decompress(base64.b64decode('eJzTLykozSupKtEryS0AAB7TBNg='))
         self.whutv = config.plugins.iptvplayer.webhuplayer_dir.value + zlib.decompress(base64.b64decode('eJzTLykozygtKdMryS0AAB6iBNE='))
         self.WUSG = self.path_wh + zlib.decompress(base64.b64decode('eJwrKS8tTtcryS0AABMbA7o='))
@@ -1102,13 +1105,31 @@ class webhuplayer(CBaseHostClass):
         
     def susn(self, i_md='', i_hgk='', i_mpu=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
-        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu }
+        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu, 'hv':self.vivn, 'orv':self.porv, 'bts':self.pbtp}
         try:
             if i_md != '' and i_hgk != '' and i_mpu != '':
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
             return
         except Exception:
             return
+            
+    def gits(self):
+        bv = '-'
+        try:
+            fr = open(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE')),'r')
+            itp = fr.readlines()
+            db = len(itp)
+            if db > 0:
+                if db == 1:
+                    if len(itp[0]) > 0:
+                        bv = itp[0].strip()[:-6].capitalize()
+                else:
+                    if len(itp[1]) > 0:
+                        bv = itp[1].strip()[:-6].capitalize()
+            fr.close()
+            return bv
+        except:
+            return '-'
         
     def getArticleContent(self, cItem):
         try:
