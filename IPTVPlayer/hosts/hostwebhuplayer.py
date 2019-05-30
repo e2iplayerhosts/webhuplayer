@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-05-27 by Alec - Web HU Player
+# 2019-05-30 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "1.8"
+HOST_VERSION = "1.9"
 ###################################################
 # LOCAL import
 ###################################################
@@ -1115,18 +1115,19 @@ class webhuplayer(CBaseHostClass):
             
     def gits(self):
         bv = '-'
+        tt = []
         try:
-            fr = open(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE')),'r')
-            itp = fr.readlines()
-            db = len(itp)
-            if db > 0:
-                if db == 1:
-                    if len(itp[0]) > 0:
-                        bv = itp[0].strip()[:-6].capitalize()
-                else:
-                    if len(itp[1]) > 0:
-                        bv = itp[1].strip()[:-6].capitalize()
-            fr.close()
+            if fileExists(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE'))):
+                fr = open(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE')),'r')
+                for ln in fr:
+                    ln = ln.rstrip('\n')
+                    if ln != '':
+                        tt.append(ln)
+                fr.close()
+                if len(tt) == 1:
+                    bv = tt[0].strip()[:-6].capitalize()
+                if len(tt) == 2:
+                    bv = tt[1].strip()[:-6].capitalize()
             return bv
         except:
             return '-'
