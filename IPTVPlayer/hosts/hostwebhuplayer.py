@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-05-30 by Alec - Web HU Player
+# 2019-06-03 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "1.9"
+HOST_VERSION = "2.0"
 ###################################################
 # LOCAL import
 ###################################################
@@ -349,6 +349,17 @@ class webhuplayer(CBaseHostClass):
                                         pu = self.esklsz('5',d3[1].strip().replace("'",""))
                                     if tv1 == 'desc':
                                         pd = self.esklsz('5',d3[1].strip().replace("'",""))
+                                        try:
+                                            tdsc = pd.split('\n')
+                                            if len(tdsc) > 0:
+                                                tmpsz = re.sub(r'^(.{600}).*$', '\g<1>...', tdsc[0]) + '\n\n'
+                                                if len(tdsc) >= 4:
+                                                    if tdsc[2] != '' and tdsc[3] != '':
+                                                        tmpsz = tmpsz + tdsc[2] + '\n' + tdsc[3]
+                                            else:
+                                                tmpsz = pd
+                                        except Exception:
+                                            tmpsz = pd
                                     if tv1 == 'icon':
                                         pi = self.esklsz('5',d3[1].strip().replace("'",""))
                                     if tv1 == 'title':
@@ -358,7 +369,7 @@ class webhuplayer(CBaseHostClass):
                                     if tv1 == 'md':
                                         pmd = self.esklsz('5',d3[1].strip().replace("'",""))
                             if pt != '' and pu != '' and pd != '' and pi != '' and pa != '' and pmk != '' and pmd != '':
-                                tdpt = {'title':pt, 'url':pu, 'desc':pd, 'icon':pi, 'azn':pa, 'mkt':pmk, 'md':pmd}
+                                tdpt = {'title':pt, 'url':pu, 'desc':tmpsz, 'icon':pi, 'azn':pa, 'mkt':pmk, 'md':pmd}
                                 self.addVideo(tdpt)
                                 if ln > 50:
                                     break
@@ -469,7 +480,18 @@ class webhuplayer(CBaseHostClass):
                         if pt == '' or pu == '' or pd == '' or pi == '' or pa == '' and pmk == '' and pmd == '':
                             return
                         else:
-                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':self.esklsz('5',pd), 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd)}
+                            try:
+                                tdsc = self.esklsz('5',pd).split('\n')
+                                if len(tdsc) > 0:
+                                    tmpsz = re.sub(r'^(.{600}).*$', '\g<1>...', tdsc[0]) + '\n\n'
+                                    if len(tdsc) >= 4:
+                                        if tdsc[2] != '' and tdsc[3] != '':
+                                            tmpsz = tmpsz + tdsc[2] + '\n' + tdsc[3]
+                                else:
+                                    tmpsz = self.esklsz('5',pd)
+                            except Exception:
+                                tmpsz = self.esklsz('5',pd)
+                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':tmpsz, 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd)}
                             mlt.append(params)
                     if len(mlt) > 0:
                         random.shuffle(mlt)
@@ -548,7 +570,18 @@ class webhuplayer(CBaseHostClass):
                         if pt == '' or pu == '' or pd == '' or pi == '' or pa == '' and pmk == '' and pmd == '':
                             return
                         else:
-                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':self.esklsz('5',pd), 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd)}
+                            try:
+                                tdsc = self.esklsz('5',pd).split('\n')
+                                if len(tdsc) > 0:
+                                    tmpsz = re.sub(r'^(.{600}).*$', '\g<1>...', tdsc[0]) + '\n\n'
+                                    if len(tdsc) >= 4:
+                                        if tdsc[2] != '' and tdsc[3] != '':
+                                            tmpsz = tmpsz + tdsc[2] + '\n' + tdsc[3]
+                                else:
+                                    tmpsz = self.esklsz('5',pd)
+                            except Exception:
+                                tmpsz = self.esklsz('5',pd)
+                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':tmpsz, 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd)}
                             mlt.append(params)
                     if len(mlt) > 0:
                         random.shuffle(mlt)
@@ -889,7 +922,8 @@ class webhuplayer(CBaseHostClass):
                     self.aid_ki = 'Megnézve: ' + n_st
                 else:
                     self.aid_ki = ''
-                desc = prdt['desc'] + '\n\n' + self.aid_ki
+                tdsc = re.sub(r'^(.{600}).*$', '\g<1>...', prdt['desc'])
+                desc = tdsc + '\n\n' + self.aid_ki
                 params = {'title':prdt['title'], 'url':prdt['url'], 'desc':desc, 'icon':prdt['icon'], 'azn':prdt['azn'], 'mkt': elso, 'md':hnn}
                 self.addVideo(params)
         except Exception:
