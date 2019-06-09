@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-03 by Alec - Web HU Player
+# 2019-06-09 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "2.0"
+HOST_VERSION = "2.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -47,6 +47,8 @@ config.plugins.iptvplayer.webhuplayer_dir = ConfigText(default = "/hdd/webhuplay
 config.plugins.iptvplayer.webmedia_dir = ConfigText(default = "/hdd/webmedia", fixed_size = False)
 config.plugins.iptvplayer.ytmedia_dir = ConfigText(default = "/hdd/ytmedia", fixed_size = False)
 config.plugins.iptvplayer.webhuplayer_nezettseg = ConfigYesNo(default = False)
+config.plugins.iptvplayer.boxtipus = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.boxrendszer = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
@@ -82,6 +84,8 @@ class webhuplayer(CBaseHostClass):
         self.vivn = GetIPTVPlayerVerstion()
         self.porv = self.gits()
         self.pbtp = '-'
+        self.btps = config.plugins.iptvplayer.boxtipus.value
+        self.brdr = config.plugins.iptvplayer.boxrendszer.value
         self.whuunz = config.plugins.iptvplayer.webhuplayer_dir.value + zlib.decompress(base64.b64decode('eJzTLykozSupKtEryS0AAB7TBNg='))
         self.whutv = config.plugins.iptvplayer.webhuplayer_dir.value + zlib.decompress(base64.b64decode('eJzTLykozygtKdMryS0AAB6iBNE='))
         self.WUSG = self.path_wh + zlib.decompress(base64.b64decode('eJwrKS8tTtcryS0AABMbA7o='))
@@ -100,6 +104,8 @@ class webhuplayer(CBaseHostClass):
         
     def listMainMenu(self, cItem):
         try:
+            if not self.ebbtit(): return
+            if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
             n_wt = self.malvadst('1', '10', 'hu_webes_tartalom')
             if n_wt != '' and self.aid:
                 self.aid_ki = 'Megnézve: ' + n_wt + '\n\n'
@@ -1315,6 +1321,17 @@ class webhuplayer(CBaseHostClass):
             rmtree(destination_dir, ignore_errors=True)
             rmtree(destination_fo, ignore_errors=True)
         return vsz, dsz
+        
+    def ebbtit(self):
+        try:
+            if '' == self.btps.strip() or '' == self.brdr.strip():
+                msg = 'A Set-top-Box típusát és a használt rendszer (image) nevét egyszer meg kell adni!\n\nA kompatibilitás és a megfelelő használat miatt kellenek ezek az adatok a programnak.\nKérlek, a helyes működéshez a valóságnak megfelelően írd be azokat.\n\nA "HU Telepítő" keretrendszerben tudod ezt megtenni.\n\nKilépek és megyek azt beállítani?'
+                ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
+                return False
+            else:
+                return True
+        except Exception:
+            return False
         
     def yvoes(self):
         vsz = ''
