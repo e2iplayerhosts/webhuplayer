@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-09 by Alec - Web HU Player
+# 2019-06-22 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "2.1"
+HOST_VERSION = "2.2"
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir, GetIPTVPlayerVerstion, rm, rmtree, mkdirs, DownloadFile, GetFileSize, GetConfigDir, Which 
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir, GetIPTVPlayerVerstion, rm, rmtree, mkdirs, DownloadFile, GetFileSize, GetConfigDir, Which, MergeDicts
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, getMPDLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs import ph
@@ -124,6 +124,12 @@ class webhuplayer(CBaseHostClass):
             else:
                 self.aid_ki = ''
             msg_utnez_tartalom = self.aid_ki + 'Utoljára nézett tartalmak megjelenítése...'
+            n_antrt = self.malvadst('1', '10', 'hu_ajltt_tartalom')
+            if n_antrt != '' and self.aid:
+                self.aid_ki = 'Megnézve: ' + n_antrt + '\n\n'
+            else:
+                self.aid_ki = ''
+            msg_wh_ajlt_tart = self.aid_ki + 'Ajánlott, nézett tartalmak megjelenítése...'
             n_if = self.malvadst('1', '10', 'hu_informacio')
             if n_if != '' and self.aid:
                 self.aid_ki = 'Megnézve: ' + n_if + '\n\n'
@@ -139,6 +145,7 @@ class webhuplayer(CBaseHostClass):
             MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'Webes tartalmak', 'tab_id': 'webes', 'desc': msg_webes_tartalom, 'icon':self.DEFAULT_ICON_URL},
                             {'category': 'list_main', 'title': 'YouTube tartalmak', 'tab_id': 'youtartalom', 'desc': msg_yt_tartalom, 'icon':self.ICON_YT},
                             {'category': 'list_main', 'title': 'Utoljára nézett tartalmak', 'tab_id': 'ut_nez_tart', 'desc': msg_utnez_tartalom, 'icon':self.DEFAULT_ICON_URL},
+                            {'category': 'list_main', 'title': 'Ajánlott, nézett tartalmak', 'tab_id': 'wh_ajlt_tart', 'desc': msg_wh_ajlt_tart, 'icon':self.DEFAULT_ICON_URL},
                             {'category': 'list_main', 'title': 'Tartalom frissítés, telepítés...', 'tab_id': 'fofrissites', 'desc': msg_frissites, 'icon':self.ICON_FRISSIT}
                            ]
             self.listsTab(MAIN_CAT_TAB, cItem)
@@ -155,6 +162,8 @@ class webhuplayer(CBaseHostClass):
                 self.wstrtlmk(cItem)
             elif tabID == 'ut_nez_tart':
                 self.unttrlmk(cItem)
+            elif tabID == 'wh_ajlt_tart':
+                self.whajnztrt(cItem, tabID)
             elif tabID == 'youtartalom':
                 self.yttrtmkk(cItem)
             elif tabID == 'fofrissites':
@@ -295,6 +304,23 @@ class webhuplayer(CBaseHostClass):
         except Exception:
             printExc()
             
+    def whajnztrt(self, cItem, tabID):
+        try:
+            self.susn('2', '10', 'hu_ajltt_tartalom')
+            tab_ams = 'whu_ajnlt_musor'
+            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint...')
+            tab_adt = 'whu_ajnlt_datum'
+            desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
+            tab_anzt = 'whu_ajnlt_nezettseg'
+            desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
+            A_CAT_TAB = [{'category':'list_six', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams},
+                         {'category':'list_six', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
+                         {'category':'list_six', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt} 
+                        ]
+            self.listsTab(A_CAT_TAB, cItem)
+        except Exception:
+            printExc()
+            
     def yttrtmkk(self, cItem):        
         try:
             if fileExists(self.fwuytln):
@@ -375,7 +401,7 @@ class webhuplayer(CBaseHostClass):
                                     if tv1 == 'md':
                                         pmd = self.esklsz('5',d3[1].strip().replace("'",""))
                             if pt != '' and pu != '' and pd != '' and pi != '' and pa != '' and pmk != '' and pmd != '':
-                                tdpt = {'title':pt, 'url':pu, 'desc':tmpsz, 'icon':pi, 'azn':pa, 'mkt':pmk, 'md':pmd}
+                                tdpt = {'title':pt, 'url':pu, 'desc':tmpsz, 'icon':pi, 'azn':pa, 'mkt':pmk, 'md':pmd, 'mjnts':False}
                                 self.addVideo(tdpt)
                                 if ln > 50:
                                     break
@@ -497,7 +523,7 @@ class webhuplayer(CBaseHostClass):
                                     tmpsz = self.esklsz('5',pd)
                             except Exception:
                                 tmpsz = self.esklsz('5',pd)
-                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':tmpsz, 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd)}
+                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':tmpsz, 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd), 'mjnts':True}
                             mlt.append(params)
                     if len(mlt) > 0:
                         random.shuffle(mlt)
@@ -587,7 +613,7 @@ class webhuplayer(CBaseHostClass):
                                     tmpsz = self.esklsz('5',pd)
                             except Exception:
                                 tmpsz = self.esklsz('5',pd)
-                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':tmpsz, 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd)}
+                            params = {'title':self.esklsz('5',pt), 'url':self.esklsz('5',pu), 'desc':tmpsz, 'icon':self.esklsz('5',pi), 'azn':self.esklsz('5',pa), 'mkt':self.esklsz('5',pmk), 'md':self.esklsz('5',pmd), 'mjnts':True}
                             mlt.append(params)
                     if len(mlt) > 0:
                         random.shuffle(mlt)
@@ -726,6 +752,73 @@ class webhuplayer(CBaseHostClass):
                                 self.tkn(fPM + '/' + fn,True)
                             if '.stream' in fn:
                                 self.tkn(fPM + '/' + fn,False)
+        except Exception:
+            printExc()
+            
+    def listSixItems(self, cItem):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'whu_ajnlt_musor':
+                self.Vajnltmsr(cItem)
+            elif tabID == 'whu_ajnlt_datum':
+                self.Vajnltdtm(cItem)
+            elif tabID == 'whu_ajnlt_nezettseg':
+                self.Vajnltnztsg(cItem)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Vajnltmsr(self,cItem):
+        try:
+            self.susn('2', '10', 'whu_ajnlt_musor')
+            vtb = self.malvadnav(cItem, '3', '10', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    if item['desc'] > 0:
+                        if item['md'] == 'wm': kszv = 'Webes tartalmak:'
+                        if item['md'] == 'ym': kszv = 'YouTube tartalmak:'
+                        tmp_d = item['desc'].replace('\n','').strip()
+                        tid = re.sub(r'^(.{600}).*$', '\g<1>...', tmp_d)
+                        item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
+                        item['mjnts'] = False
+                    self.addVideo(item)
+        except Exception:
+            printExc()
+            
+    def Vajnltdtm(self,cItem):
+        vtb = []
+        kszv = ''
+        try:
+            self.susn('2', '10', 'whu_ajnlt_datum')
+            vtb = self.malvadnav(cItem, '4', '10', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    if item['desc'] > 0:
+                        if item['md'] == 'wm': kszv = 'Webes tartalmak:'
+                        if item['md'] == 'ym': kszv = 'YouTube tartalmak:'
+                        tmp_d = item['desc'].replace('\n','').strip()
+                        tid = re.sub(r'^(.{600}).*$', '\g<1>...', tmp_d)
+                        item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
+                        item['mjnts'] = False
+                    self.addVideo(item)
+        except Exception:
+            printExc()
+            
+    def Vajnltnztsg(self,cItem):
+        try:
+            self.susn('2', '10', 'whu_ajnlt_nezettseg')
+            vtb = self.malvadnav(cItem, '5', '10', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    if item['desc'] > 0:
+                        if item['md'] == 'wm': kszv = 'Webes tartalmak:'
+                        if item['md'] == 'ym': kszv = 'YouTube tartalmak:'
+                        tmp_d = item['desc'].replace('\n','').strip()
+                        tid = re.sub(r'^(.{600}).*$', '\g<1>...', tmp_d)
+                        item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
+                        item['mjnts'] = False
+                    self.addVideo(item)
         except Exception:
             printExc()
             
@@ -930,7 +1023,7 @@ class webhuplayer(CBaseHostClass):
                     self.aid_ki = ''
                 tdsc = re.sub(r'^(.{600}).*$', '\g<1>...', prdt['desc'])
                 desc = tdsc + '\n\n' + self.aid_ki
-                params = {'title':prdt['title'], 'url':prdt['url'], 'desc':desc, 'icon':prdt['icon'], 'azn':prdt['azn'], 'mkt': elso, 'md':hnn}
+                params = {'title':prdt['title'], 'url':prdt['url'], 'desc':desc, 'icon':prdt['icon'], 'azn':prdt['azn'], 'mkt': elso, 'md':hnn, 'mjnts':True}
                 self.addVideo(params)
         except Exception:
             printExc()
@@ -1233,6 +1326,15 @@ class webhuplayer(CBaseHostClass):
                         videoUrls.extend(retTab)
                     else:
                         videoUrls.append({'name':'direct link', 'url':uri})
+            if cItem['mjnts']:
+                tid = ''
+                if len(cItem['desc']) > 0:
+                    dsct = cItem['desc']
+                    idx1 = dsct.find('\n\n')
+                    if -1 < idx1:
+                        tid = dsct[0:idx1].strip()
+                        tid = re.sub(r'^(.{600}).*$', '\g<1>...', tid)
+                self.susmrgts('2', '10', '0', cItem['url'], cItem['title'], cItem['icon'], tid, cItem['azn'], cItem['mkt'], cItem['md'])
             return videoUrls
         except Exception:
             printExc()
@@ -1250,6 +1352,23 @@ class webhuplayer(CBaseHostClass):
                 dd = pd + '\n' + dsz
             params = {'category': 'list_second', 'title': tt, 'tab_id': pti, 'desc': dd}
         return params
+        
+    def getdvdsz(self, pu='', psz=''):
+        bv = ''
+        if pu != '' and psz != '':
+            n_atnav = self.malvadst('1', '10', pu)
+            if n_atnav != '' and self.aid:
+                if pu == 'hu_webes_tartalom':
+                    self.aid_ki = 'Web HU Player  v' + HOST_VERSION + '\nMegnézve: ' + n_atnav + '\n\n'
+                else:
+                    self.aid_ki = 'Megnézve: ' + n_atnav + '\n\n'
+            else:
+                if pu == 'hu_webes_tartalom':
+                    self.aid_ki = 'Web HU Player  v' + HOST_VERSION + '\n'
+                else:
+                    self.aid_ki = ''
+            bv = self.aid_ki + psz
+        return bv
         
     def wsvoes(self):
         vsz = ''
@@ -1544,6 +1663,40 @@ class webhuplayer(CBaseHostClass):
             return 0, 0
         return ev, uv
         
+    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl='', i_mpaz='', i_mput='', i_mpmd=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        try:
+            if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+            if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
+            if i_mpu != '': i_mpu = base64.b64encode(i_mpu).replace('\n', '').strip()
+            if i_mpt != '': i_mpt = base64.b64encode(i_mpt).replace('\n', '').strip()
+            if i_mpi == '':
+                i_mpi = base64.b64encode('-')
+            else:
+                i_mpi = base64.b64encode(i_mpi).replace('\n', '').strip()
+            if i_mpdl == '':
+                i_mpdl = base64.b64encode('-')
+            else:
+                i_mpdl = base64.b64encode(i_mpdl).replace('\n', '').strip()
+            if i_mpaz == '':
+                i_mpaz = base64.b64encode('-')
+            else:
+                i_mpaz = base64.b64encode(i_mpaz).replace('\n', '').strip()
+            if i_mput == '':
+                i_mput = base64.b64encode('-')
+            else:
+                i_mput = base64.b64encode(i_mput).replace('\n', '').strip()
+            if i_mpmd == '':
+                i_mpmd = base64.b64encode('-')
+            else:
+                i_mpmd = base64.b64encode(i_mpmd).replace('\n', '').strip()
+            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl, 'mpaz':i_mpaz, 'mput':i_mput, 'mpmd':i_mpmd}
+            if i_md != '' and i_hgk != '' and i_mptip != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
+        
     def lwhuv(self, azn='', pv=''):
         bvv = False
         bvnv = False
@@ -1588,6 +1741,61 @@ class webhuplayer(CBaseHostClass):
         except Exception:
             return ''
         return kszvdrtk
+        
+    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        t_s = []
+        try:
+            if i_md != '' and i_hgk != '' and i_mptip != '':
+                if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+                if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip}
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+                if not sts: return t_s
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div_a1_div"', '<div id="div_a2_div"')[1]
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="d_sor_d"', '</div>')
+                if len(data) == 0: return t_s
+                for temp_item in data:
+                    temp_data = self.cm.ph.getAllItemsBeetwenMarkers(temp_item, '<span', '</span>')
+                    if len(temp_data) == 0: return t_s
+                    for item in temp_data:
+                        t_vp = self.cm.ph.getSearchGroups(item, 'class=[\'"]([^"^\']+?)[\'"]')[0]
+                        if t_vp == 'c_sor_u':
+                            temp_u = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_u">', '</span>', False)[1]
+                            if temp_u != '': temp_u = base64.b64decode(temp_u)
+                        if t_vp == 'c_sor_t':
+                            temp_t = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_t">', '</span>', False)[1]
+                            if temp_t != '': temp_t = base64.b64decode(temp_t)
+                        if t_vp == 'c_sor_i':
+                            temp_i = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_i">', '</span>', False)[1]
+                            if temp_i != '': temp_i = base64.b64decode(temp_i)
+                        if t_vp == 'c_sor_l':
+                            temp_l = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_l">', '</span>', False)[1]
+                            if temp_l != '': temp_l = base64.b64decode(temp_l)
+                        if t_vp == 'c_sor_n':
+                            temp_n = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_n">', '</span>', False)[1]
+                            if temp_n != '': temp_n = base64.b64decode(temp_n)
+                        if t_vp == 'c_sor_tip':
+                            temp_tp = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_tip">', '</span>', False)[1]
+                            if temp_tp != '': temp_tp = base64.b64decode(temp_tp)
+                        if t_vp == 'c_sor_ut':
+                            temp_tut = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_ut">', '</span>', False)[1]
+                            if temp_tut != '': temp_tut = base64.b64decode(temp_tut)
+                        if t_vp == 'c_sor_az':
+                            temp_az = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_az">', '</span>', False)[1]
+                            if temp_az != '': temp_az = base64.b64decode(temp_az)
+                        if t_vp == 'c_sor_md':
+                            temp_md = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_md">', '</span>', False)[1]
+                            if temp_md != '': temp_md = base64.b64decode(temp_md)
+                    if temp_u == '' and temp_t =='': continue
+                    if temp_n == '': temp_n = '1'
+                    params = MergeDicts(cItem, {'good_for_fav': False, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp, 'azn':temp_az, 'mkt': temp_tut, 'md':temp_md})
+                    t_s.append(params)       
+            return t_s
+        except Exception:
+            return []
     
     def gvsn(self, fn=''):
         verzio = 0
@@ -1670,6 +1878,8 @@ class webhuplayer(CBaseHostClass):
                 self.listFourthItems(self.currItem)
             elif category == 'list_fifth':
                 self.listFifthItems(self.currItem)
+            elif category == 'list_six':
+                self.listSixItems(self.currItem)
             elif category in ['search', 'search_next_page']:
                 cItem = dict(self.currItem)
                 cItem.update({'search_item':False, 'name':'category'}) 
