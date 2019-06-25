@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-22 by Alec - Web HU Player
+# 2019-06-26 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "2.2"
+HOST_VERSION = "2.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -20,6 +20,7 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 from Components.config import config, ConfigText, ConfigYesNo, ConfigDirectory, getConfigListEntry
 from os.path import normpath
 import urlparse
+import requests
 import os
 import re
 import random
@@ -402,7 +403,17 @@ class webhuplayer(CBaseHostClass):
                                         pmd = self.esklsz('5',d3[1].strip().replace("'",""))
                             if pt != '' and pu != '' and pd != '' and pi != '' and pa != '' and pmk != '' and pmd != '':
                                 tdpt = {'title':pt, 'url':pu, 'desc':tmpsz, 'icon':pi, 'azn':pa, 'mkt':pmk, 'md':pmd, 'mjnts':False}
-                                self.addVideo(tdpt)
+                                fext = os.path.splitext(pu)[1]
+                                if fext in ['.mp3','.acc'] or 'RÁDIÓ' in tmpsz:
+                                    temp_prot = self.ultpvz(pu)
+                                    if temp_prot == '':
+                                        self.addMarker({'title':pt, 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
+                                    elif 'audio' in temp_prot:
+                                        self.addAudio(tdpt)
+                                    else:
+                                        self.addVideo(tdpt)
+                                else:
+                                    self.addVideo(tdpt)
                                 if ln > 50:
                                     break
         except Exception:
@@ -528,7 +539,17 @@ class webhuplayer(CBaseHostClass):
                     if len(mlt) > 0:
                         random.shuffle(mlt)
                         for ipv in mlt:
-                            self.addVideo(ipv)
+                            fext = os.path.splitext(ipv['url'])[1]
+                            if fext in ['.mp3','.acc'] or 'RÁDIÓ' in ipv['desc']:
+                                temp_prot = self.ultpvz(ipv['url'])
+                                if temp_prot == '':
+                                    self.addMarker({'title':ipv['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
+                                elif 'audio' in temp_prot:
+                                    self.addAudio(ipv)
+                                else:
+                                    self.addVideo(ipv)
+                            else:
+                                self.addVideo(ipv)
             else:
                 msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez...'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
@@ -618,7 +639,17 @@ class webhuplayer(CBaseHostClass):
                     if len(mlt) > 0:
                         random.shuffle(mlt)
                         for ipv in mlt:
-                            self.addVideo(ipv)
+                            fext = os.path.splitext(ipv['url'])[1]
+                            if fext in ['.mp3','.acc'] or 'RÁDIÓ' in ipv['desc']:
+                                temp_prot = self.ultpvz(ipv['url'])
+                                if temp_prot == '':
+                                    self.addMarker({'title':ipv['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
+                                elif 'audio' in temp_prot:
+                                    self.addAudio(ipv)
+                                else:
+                                    self.addVideo(ipv)
+                            else:
+                                self.addVideo(ipv)
             else:
                 msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez...'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
@@ -782,7 +813,17 @@ class webhuplayer(CBaseHostClass):
                         tid = re.sub(r'^(.{600}).*$', '\g<1>...', tmp_d)
                         item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
                         item['mjnts'] = False
-                    self.addVideo(item)
+                    fext = os.path.splitext(item['url'])[1]
+                    if fext in ['.mp3','.acc'] or 'RÁDIÓ' in item['mkt']:
+                        temp_prot = self.ultpvz(item['url'])
+                        if temp_prot == '':
+                            self.addMarker({'title':item['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
+                        elif 'audio' in temp_prot:
+                            self.addAudio(item)
+                        else:
+                            self.addVideo(item)
+                    else:
+                        self.addVideo(item)
         except Exception:
             printExc()
             
@@ -801,7 +842,17 @@ class webhuplayer(CBaseHostClass):
                         tid = re.sub(r'^(.{600}).*$', '\g<1>...', tmp_d)
                         item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
                         item['mjnts'] = False
-                    self.addVideo(item)
+                    fext = os.path.splitext(item['url'])[1]
+                    if fext in ['.mp3','.acc'] or 'RÁDIÓ' in item['mkt']:
+                        temp_prot = self.ultpvz(item['url'])
+                        if temp_prot == '':
+                            self.addMarker({'title':item['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
+                        elif 'audio' in temp_prot:
+                            self.addAudio(item)
+                        else:
+                            self.addVideo(item)
+                    else:
+                        self.addVideo(item)
         except Exception:
             printExc()
             
@@ -818,7 +869,17 @@ class webhuplayer(CBaseHostClass):
                         tid = re.sub(r'^(.{600}).*$', '\g<1>...', tmp_d)
                         item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
                         item['mjnts'] = False
-                    self.addVideo(item)
+                    fext = os.path.splitext(item['url'])[1]
+                    if fext in ['.mp3','.acc'] or 'RÁDIÓ' in item['mkt']:
+                        temp_prot = self.ultpvz(item['url'])
+                        if temp_prot == '':
+                            self.addMarker({'title':item['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
+                        elif 'audio' in temp_prot:
+                            self.addAudio(item)
+                        else:
+                            self.addVideo(item)
+                    else:
+                        self.addVideo(item)
         except Exception:
             printExc()
             
@@ -1024,10 +1085,31 @@ class webhuplayer(CBaseHostClass):
                 tdsc = re.sub(r'^(.{600}).*$', '\g<1>...', prdt['desc'])
                 desc = tdsc + '\n\n' + self.aid_ki
                 params = {'title':prdt['title'], 'url':prdt['url'], 'desc':desc, 'icon':prdt['icon'], 'azn':prdt['azn'], 'mkt': elso, 'md':hnn, 'mjnts':True}
-                self.addVideo(params)
+                fext = os.path.splitext(prdt['url'])[1]
+                if fext in ['.mp3','.acc'] or 'RÁDIÓ' in elso:
+                    temp_prot = self.ultpvz(prdt['url'])
+                    if temp_prot == '':
+                        self.addMarker({'title':prdt['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
+                    elif 'audio' in temp_prot:
+                        self.addAudio(params)
+                    else:
+                        self.addVideo(params)
+                else:
+                    self.addVideo(params)
         except Exception:
             printExc()
         return
+        
+    def ultpvz(self, i_u=''):
+        bv = ''
+        try:
+            if i_u != '':
+                r = requests.get(i_u, stream=True, timeout=1.5)
+                if r:
+                    bv = r.headers['content-type']
+            return bv
+        except Exception:
+            return ''
         
     def tkn_dt(self, fan):
         encoding = 'utf-8'
@@ -1338,6 +1420,11 @@ class webhuplayer(CBaseHostClass):
             return videoUrls
         except Exception:
             printExc()
+            
+    def getVideoLinks(self, videoUrl):
+        urlTab = []
+        urlTab = [{'name':'direct link', 'url':videoUrl}]
+        return urlTab
             
     def mtem(self, pi, pt, pti, pd):
         params = dict()
@@ -1840,7 +1927,6 @@ class webhuplayer(CBaseHostClass):
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         try:
-            printDBG("listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
             tabID = cItem.get('tab_id', '')
             if tabID == 's_webes':
                 self.wssrtrtmk(cItem, searchPattern, searchType)
@@ -1945,11 +2031,18 @@ class IPTVHost(CHostBase):
                     if '' != url:
                         hostLinks.append(CUrlItem("Link", url, 1))
                 elif cItem['type'] == 'article':
-                    type = CDisplayListItem.TYPE_ARTICLE    
+                    type = CDisplayListItem.TYPE_ARTICLE
+                elif cItem['type'] == 'marker':
+                    type = CDisplayListItem.TYPE_MARKER
+                elif cItem['type'] == 'audio':
+                    type = CDisplayListItem.TYPE_AUDIO
+                    url = cItem.get('url', '')
+                    if '' != url:
+                        hostLinks.append(CUrlItem("Link", url, 1))
                 title       =  cItem.get('title', '')
                 description =  cItem.get('desc', '')
                 icon        =  cItem.get('icon', '')
-                if len(icon) == 0: icon = self.DEFAULT_ICON_URL
+                if len(icon) == 0: icon = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8/XyypIBwDbUhM+'))
                 hostItem = CDisplayListItem(name = title,
                                             description = description,
                                             type = type,
