@@ -2,7 +2,7 @@
 ###################################################
 # 2019-06-26 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "2.3"
+HOST_VERSION = "2.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -20,7 +20,6 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 from Components.config import config, ConfigText, ConfigYesNo, ConfigDirectory, getConfigListEntry
 from os.path import normpath
 import urlparse
-import requests
 import os
 import re
 import random
@@ -36,6 +35,11 @@ try:
     FOUND_SUB = True
 except Exception:
     FOUND_SUB = False
+try:
+    import requests
+    FOUND_REQ = True
+except Exception:
+    FOUND_REQ = False
 from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
 from Screens.MessageBox import MessageBox
 from hashlib import sha1
@@ -1236,7 +1240,9 @@ class webhuplayer(CBaseHostClass):
             elif not os.path.isdir(self.IH):
                 msg = 'Hiba: 103 - Nem megfelelő E2iPlayer könyvtár!'
             elif FOUND_SUB == False:
-                msg = 'Hiba: 104 - Sajnos nem kompatibilis a set-top-box rendszered a használathoz!\nsubprocess kell a használathoz, telepítsd azt!'
+                msg = 'Hiba: 104 - Sajnos nem kompatibilis a set-top-box rendszered a használathoz!\nsubprocess modul kell a használathoz, telepítsd azt!'
+            elif FOUND_REQ == False:
+                msg = 'Hiba: 105 - Sajnos nem kompatibilis a set-top-box rendszered a használathoz!\nrequests modul kell a használathoz, telepítsd azt!'
             else:
                 valasz = True
         except Exception:
